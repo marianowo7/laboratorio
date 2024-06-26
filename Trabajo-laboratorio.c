@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 struct pasajero{
     int asiento;
@@ -235,7 +236,6 @@ void guardarDatos(
         fwrite(&recaudacionColectivoVuelta2, sizeof(float), 1, file);
         fwrite(&precioBoleto, sizeof(float), 1, file);
         fwrite(&recaudacionDiaria, sizeof(float), 1, file);
-
         fclose(file);
         printf("\nDatos actualizados en el archivo.\n");
 }
@@ -286,7 +286,6 @@ void cargarDatos(
         fread(recaudacionColectivoVuelta2, sizeof(float), 1, file);
         fread(recaudacionDia, sizeof(float), 1, file);
         fread(precioBoleto, sizeof(float), 1, file);
-
         fclose(file);
 }
 
