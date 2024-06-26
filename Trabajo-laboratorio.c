@@ -26,7 +26,7 @@ void Flimite(int *fechaDeSalida1,int *fechaDeSalida2,int *fechaDeSalida3,int *fe
     scanf("%i",fechaDeSalida4);    
 }
 
-void devolucion(int fechaActual, int fechaLimite, int *colectivo, struct pasajero *pasajeroColectivo, int *cantidad){
+void devolucion(int fechaActual, int fechaLimite, int *colectivo, struct pasajero *pasajeroColectivo, int *cantidad, float *recaudacion, float *recaudacionDiaria){
     int asiento = 0;
     int fechaLimiteDevolucion = 0;
     fechaLimiteDevolucion = (fechaLimite - fechaActual);
@@ -43,6 +43,14 @@ void devolucion(int fechaActual, int fechaLimite, int *colectivo, struct pasajer
     colectivo[asiento - 1] = 0;
     pasajeroColectivo[asiento - 1].borrado = 1;
     (*cantidad)--;
+    if (2024 - pasajeroColectivo[asiento - 1].anioDeNacimiento >= 18){
+        (*recaudacion)--;
+        (*recaudacionDiaria)--;
+    } else if (2024 - pasajeroColectivo[asiento - 1].anioDeNacimiento <= 6){
+        (*recaudacion)-= 0.5;
+        (*recaudacionDiaria) -= 0.5;
+    }
+
     printf("\nDevolucion aceptada!");
     system("\npause");
 }
@@ -183,14 +191,17 @@ void funRecaudacionDiaria(float recaudacionDiaria, float precio){
 }
 
 void guardarDatos(
-    const char *filename, int fechaDeSalida1, int fechaDeSalida2, int fechaDeSalida3, int fechaDeSalida4,
-    int fechaActual, int ColectivoIda1[20], int ColectivoIda2[20], int ColectivoVuelta1[20], int ColectivoVuelta2[20],
+    const char *filename,
+    int fechaDeSalida1, int fechaDeSalida2, int fechaDeSalida3, int fechaDeSalida4,
+    int fechaActual,
+    int ColectivoIda1[20], int ColectivoIda2[20], int ColectivoVuelta1[20], int ColectivoVuelta2[20],
     struct pasajero colectivo1[20], int pasajeroCantidad1, int cantidadMenoresColectivo1,
     struct pasajero colectivo2[20], int pasajeroCantidad2, int cantidadMenoresColectivo2,
     struct pasajero colectivo3[20], int pasajeroCantidad3, int cantidadMenoresColectivo3,
     struct pasajero colectivo4[20], int pasajeroCantidad4, int cantidadMenoresColectivo4,
-    float recaudacionColectivoIda1, float recaudacionColectivoIda2, float recaudacionColectivoVuelta1, float recaudacionColectivoVuelta2, float recaudacionDia ){
-
+    float recaudacionColectivoIda1, float recaudacionColectivoIda2, float recaudacionColectivoVuelta1, float recaudacionColectivoVuelta2,
+    float precioBoleto, float recaudacionDiaria
+) {
         FILE *file = fopen(filename, "wb");
         if (!file) {
             printf("Error al abrir el archivo para escribir.\n");
@@ -222,12 +233,13 @@ void guardarDatos(
         fwrite(&recaudacionColectivoIda2, sizeof(float), 1, file);
         fwrite(&recaudacionColectivoVuelta1, sizeof(float), 1, file);
         fwrite(&recaudacionColectivoVuelta2, sizeof(float), 1, file);
-        fwrite(&recaudacionDia, sizeof(float), 1, file);
+        fwrite(&precioBoleto, sizeof(float), 1, file);
+        fwrite(&recaudacionDiaria, sizeof(float), 1, file);
 
         fclose(file);
-        printf("\nDatos actualizados...\n");
-        system("pause");
+        printf("\nDatos actualizados en el archivo.\n");
 }
+
 
 void cargarDatos(
     const char *filename,
@@ -239,13 +251,12 @@ void cargarDatos(
     struct pasajero colectivo3[20], int *pasajeroCantidad3, int *cantidadMenoresColectivo3,
     struct pasajero colectivo4[20], int *pasajeroCantidad4, int *cantidadMenoresColectivo4,
     float *recaudacionColectivoIda1, float *recaudacionColectivoIda2, float *recaudacionColectivoVuelta1, float *recaudacionColectivoVuelta2,
-    float *recaudacionDia
-){
-        
+    float *recaudacionDia, float *precioBoleto
+) {
         FILE *file = fopen(filename, "rb");
         if (!file) {
-            printf("Error al abrir el archivo para leer. Se creara uno nuevo\n");
-            FILE *file = fopen(filename, "wb");
+            printf("Error al abrir el archivo para leer. Se creará uno nuevo.\n");
+            return;
         }
 
         fread(fechaDeSalida1, sizeof(int), 1, file);
@@ -274,9 +285,11 @@ void cargarDatos(
         fread(recaudacionColectivoVuelta1, sizeof(float), 1, file);
         fread(recaudacionColectivoVuelta2, sizeof(float), 1, file);
         fread(recaudacionDia, sizeof(float), 1, file);
+        fread(precioBoleto, sizeof(float), 1, file);
 
         fclose(file);
 }
+
 
 int main() {
 
@@ -318,11 +331,8 @@ int main() {
     float recaudacionColectivoIda2 = 0;
     float recaudacionColectivoVuelta1 = 0;
     float recaudacionColectivoVuelta2 = 0;
-
-    float recaudacionDiaria = 0;
-
     // recaudacaion del dia;
-    float recaudacionDia = 0;
+    float recaudacionDiaria = 0;
 
     // Iterador de croquis de colectivo;
     int croquisColectivo = 0;
@@ -339,7 +349,7 @@ int main() {
 
     
 
-    cargarDatos("datos.bin", &fechaDeSalida1, &fechaDeSalida2, &fechaDeSalida3, &fechaDeSalida4, &fechaActual, ColectivoIda1, ColectivoIda2, ColectivoVuelta1, ColectivoVuelta2,colectivo1, &pasajeroCantidad1, &cantidadMenoresColectivo1, colectivo2, &pasajeroCantidad2, &cantidadMenoresColectivo2,colectivo3, &pasajeroCantidad3, &cantidadMenoresColectivo3,colectivo4, &pasajeroCantidad4, &cantidadMenoresColectivo4, &recaudacionColectivoIda1, &recaudacionColectivoIda2, &recaudacionColectivoVuelta1, &recaudacionColectivoVuelta2, &recaudacionDia
+    cargarDatos("datos.bin", &fechaDeSalida1, &fechaDeSalida2, &fechaDeSalida3, &fechaDeSalida4, &fechaActual, ColectivoIda1, ColectivoIda2, ColectivoVuelta1, ColectivoVuelta2,colectivo1, &pasajeroCantidad1, &cantidadMenoresColectivo1, colectivo2, &pasajeroCantidad2, &cantidadMenoresColectivo2,colectivo3, &pasajeroCantidad3, &cantidadMenoresColectivo3,colectivo4, &pasajeroCantidad4, &cantidadMenoresColectivo4, &recaudacionColectivoIda1, &recaudacionColectivoIda2, &recaudacionColectivoVuelta1, &recaudacionColectivoVuelta2, &precioBoleto, &recaudacionDiaria
     );
 
     printf("\nIngrese el precio del boleto : ");
@@ -353,7 +363,7 @@ int main() {
                              colectivo3, pasajeroCantidad3, cantidadMenoresColectivo3,
                              colectivo4, pasajeroCantidad4, cantidadMenoresColectivo4,
                              recaudacionColectivoIda1, recaudacionColectivoIda2,
-                             recaudacionColectivoVuelta1, recaudacionColectivoVuelta2, precioBoleto);
+                             recaudacionColectivoVuelta1, recaudacionColectivoVuelta2, precioBoleto, recaudacionDiaria);
         system("cls");
         printf("\nFecha actual : %i", fechaActual);
         printf("\nPrecio actual del boleto : %.2f", precioBoleto);
@@ -371,6 +381,9 @@ int main() {
 
         printf("\nTEST --------------- tests");
         printf("\n");
+        printf("\ncantidad de gente en colectivo 1: %i", pasajeroCantidad1);
+        printf("\n recaudacion en colectivo 1: %.2f", recaudacionColectivoIda1);
+        printf("\n recaudacion diaria: %.2f", recaudacionDiaria);
         printf("\ncantidad de gente en colectivo 1: %i", pasajeroCantidad1);
         printf("\n");
         printf("\nTEST --------------- tests");
@@ -487,13 +500,13 @@ int main() {
                     printf("\nIngrese una opcion : ");
                     scanf("%i", &devolucionOpcion);
                     if (devolucionOpcion == 1) {
-                        devolucion(fechaActual, fechaDeSalida1, ColectivoIda1, colectivo1, &pasajeroCantidad1);
+                        devolucion(fechaActual, fechaDeSalida1, ColectivoIda1, colectivo1, &pasajeroCantidad1, &recaudacionColectivoIda1, &recaudacionDiaria);
                     } else if (devolucionOpcion == 2) {
-                        devolucion(fechaActual, fechaDeSalida2, ColectivoIda2, colectivo2, &pasajeroCantidad2);
+                        devolucion(fechaActual, fechaDeSalida2, ColectivoIda2, colectivo2, &pasajeroCantidad2, &recaudacionColectivoIda2, &recaudacionDiaria);
                     } else if (devolucionOpcion == 3){
-                        devolucion(fechaActual, fechaDeSalida3, ColectivoVuelta1, colectivo3, &pasajeroCantidad3);
+                        devolucion(fechaActual, fechaDeSalida3, ColectivoVuelta1, colectivo3, &pasajeroCantidad3, &recaudacionColectivoVuelta1, &recaudacionDiaria);
                     } else if (devolucionOpcion == 4) {
-                        devolucion(fechaActual, fechaDeSalida4, ColectivoVuelta2, colectivo4, &pasajeroCantidad4);
+                        devolucion(fechaActual, fechaDeSalida4, ColectivoVuelta2, colectivo4, &pasajeroCantidad4, &recaudacionColectivoVuelta2, &recaudacionDiaria);
                     }
                 } while (devolucionOpcion != 5);
             break;
